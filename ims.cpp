@@ -11,6 +11,14 @@
 #define HOD *60
 #define POCET_FILTRU 3
 
+#define KAPACITA_LISU 1000 //kg
+#define SANCE_NA_KVALITNI_REPKU 0.995
+
+#define MIN_PROCENT_ODPADU 1
+#define MAX_PROCENT_ODPADU 2
+
+int fronta_lis = 0;
+
 
 //deklarace zarizeni
 Facility kontrolorKvality("kontrolorKvality");
@@ -45,8 +53,7 @@ public:
 		Wait(Uniform(25 MIN, 35 MIN));
 		Release(kontrolorKvality);
 
-		double rnd = Random();
-		if (rnd <= 99.5) // repka je v poradku
+		if (Random() <= SANCE_NA_KVALITNI_REPKU) // repka je v poradku //99.5
 		{
 			for (int i = 0; i < 25; i++)
 				(new Repka)->Activate(); // 1 tuna repkoveho semene
@@ -57,8 +64,20 @@ public:
 
 class Repka : public Process {
 public:
+  double Amount = 100; //% //muzem to klidne prepocitat na kg
 	void Behavior() {
 		// mam problem s tim odpadem 2%, kdyz Repka ma byt 1 tuna
+    // může to vygenerovat nový proces odpadu
+
+    double mnozstviOdpadu = Random() + 1;
+    Amount -= mnozstviOdpadu;
+
+    fronta_lis += Amount;
+
+    if (fronta_lis > KAPACITA_LISU) {
+      (new Olej)->Activate();
+      fronta_lis -= KAPACITA_LISU;
+    }
 	}
 };
 
