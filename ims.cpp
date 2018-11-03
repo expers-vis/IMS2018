@@ -17,7 +17,6 @@
 #define MIN_PROCENT_ODPADU 1
 #define MAX_PROCENT_ODPADU 2
 
-int fronta_lis = 0;
 
 
 //deklarace zarizeni
@@ -26,6 +25,9 @@ Facility lis1Stupne("lis1Stupne");
 Facility lis2Stupne("lis2Stupne");
 
 Store Filtr("Filtr", POCET_FILTRU);
+
+Store Lis1("Lis prvniho stupne", 1);
+Store Lis2("Lis druheho stupne", 1);
 
 //deklarace statistik
 Stat stPanenskyOlej;
@@ -36,6 +38,8 @@ Stat stVylisky;
 double panenskyOlej = 0;
 double stolniOlej = 0;
 double vylisky = 0;
+
+int frontaLis = 0;
 
 //deklarace udalosti
 class Generator : public Event {
@@ -64,21 +68,43 @@ public:
 
 class Repka : public Process {
 public:
-  double Amount = 100; //% //muzem to klidne prepocitat na kg
+  double mnozstvi = 1000; //kg
 	void Behavior() {
 		// mam problem s tim odpadem 2%, kdyz Repka ma byt 1 tuna
     // může to vygenerovat nový proces odpadu
+    // třízení by mělo zabrat čas?
 
-    double mnozstviOdpadu = Random() + 1;
-    Amount -= mnozstviOdpadu;
+    double mnozstviOdpadu = Uniform(10,20);
+    mnozstvi -= mnozstviOdpadu;
 
-    fronta_lis += Amount;
+    frontaLis += mnozstvi;
 
-    if (fronta_lis > KAPACITA_LISU) {
+    if (frontaLis > KAPACITA_LISU) {
+      frontaLis -= KAPACITA_LISU;
+
+
+      Enter(Lis1, 1);
+      Wait( Normal(30, 1));
+      (new PanenskyOlej)->Activate();
+      Leave(Lis1, 1);
+
+      Enter(Lis2, 1);
+      Wait( Normal(40, 1));
       (new Olej)->Activate();
-      fronta_lis -= KAPACITA_LISU;
+      Leave(Lis2, 1);
     }
+
 	}
+};
+
+class Olej : public Process { // 100 l oleje
+  public: Olej() : Process(0) { }
+
+  void Behavior() {
+    Enter(Filtr, 1);
+    Wait( Uniform(10-12));
+    Leave(Filtr, 1);
+  }
 };
 
 // sablona
