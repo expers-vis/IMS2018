@@ -1,6 +1,7 @@
 /**
 * @file 	ims.cpp
 * @author	Roman Janik (xjanik20)
+* @author	Karel Klecka(xkleck04)
 * @date 	31.10.2018
 * @brief	IMS projekt - Vyroba repkoveho oleje
 */
@@ -98,6 +99,7 @@ int main() {
 	
 	Run();	// simulace
 
+	// tisk vysledku
 	Print("Vydestilovano alkoholu celkem: ");
 	Print(st_destilat.Sum());
 	Print("\n");
