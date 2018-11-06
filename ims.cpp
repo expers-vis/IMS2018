@@ -7,6 +7,7 @@
 */
 
 #include "simlib.h"
+#include <time.h>
 
 #define MIN *1
 #define HOD *60
@@ -30,6 +31,8 @@ Store Filtr("Filtr", POCET_FILTRU);
 Store Lis1("Lis prvniho stupne", 1);
 Store Lis2("Lis druheho stupne", 1);
 
+Store RafinacniJednotka("Rafinacni jednotka", 1);
+
 //deklarace statistik
 Stat stPanenskyOlej;
 Stat stStolniOlej;
@@ -42,15 +45,66 @@ double vylisky = 0;
 
 int frontaLis = 0;
 
-//deklarace udalosti
-class Generator : public Event {
+//deklarace procesu
+
+class PanenskyOlej : public Process {
+	public: PanenskyOlej() : Process(1) { }
+
 	void Behavior() {
-		(new Kamion)->Activate();
-		Activate(Time + 8 HOD);
+		Enter(Filtr, 1);
+		Wait( Uniform(10 MIN, 12 MIN));
+		Leave(Filtr, 1);
+
+		Seize(kontrolorKvality);
+		Wait(Uniform(10 MIN, 20 MIN));
+		Release(kontrolorKvality);
 	}
 };
 
-//deklarace procesu
+class StolniOlej : public Process { // 100 l oleje
+	public: StolniOlej() : Process(0) { }
+
+	void Behavior() {
+		Enter(Filtr, 1);
+		Wait( Uniform(10 MIN, 12 MIN));
+		Leave(Filtr, 1);
+
+		Enter(RafinacniJednotka, 1);
+		Wait( Uniform(10 MIN, 12 MIN));
+		Leave(RafinacniJednotka, 1);
+
+		Seize(kontrolorKvality);
+		Wait(Uniform(10 MIN, 20 MIN));
+		Release(kontrolorKvality);
+	}
+};
+
+class Vylisky : public Process {
+
+	void Behavior() {
+
+	}
+};
+
+
+class Repka : public Process {
+	void Behavior() {
+
+	Enter(Lis1, 1);
+	Wait( Normal(30, 1));
+	(new PanenskyOlej)->Activate();
+	Leave(Lis1, 1);
+
+	Enter(Lis2, 1);
+	Wait( Normal(40, 1));
+	(new StolniOlej)->Activate();
+	(new StolniOlej)->Activate();
+	(new Vylisky)->Activate();
+	Leave(Lis2, 1);
+
+	}
+};
+
 class Kamion : public Process {
 public:
 	void Behavior() {
@@ -67,56 +121,16 @@ public:
 };
 
 
-class Repka : public Process {
-public:
-  double mnozstvi = 1000; //kg
+//deklarace udalosti
+class Generator : public Event {
 	void Behavior() {
-		// mam problem s tim odpadem 2%, kdyz Repka ma byt 1 tuna
-    // může to vygenerovat nový proces odpadu
-    // třízení by mělo zabrat čas?
-
-    double mnozstviOdpadu = Uniform(10,20);
-    mnozstvi -= mnozstviOdpadu;
-
-    frontaLis += mnozstvi;
-
-    if (frontaLis > KAPACITA_LISU) {
-      frontaLis -= KAPACITA_LISU;
-
-
-      Enter(Lis1, 1);
-      Wait( Normal(30, 1));
-      (new PanenskyOlej)->Activate();
-      Leave(Lis1, 1);
-
-      Enter(Lis2, 1);
-      Wait( Normal(40, 1));
-      (new Olej)->Activate();
-      Leave(Lis2, 1);
-    }
-
-	}
-};
-
-class Olej : public Process { // 100 l oleje
-  public: Olej() : Process(0) { }
-
-  void Behavior() {
-    Enter(Filtr, 1);
-    Wait( Uniform(10-12));
-    Leave(Filtr, 1);
-  }
-};
-
-// sablona
-class Vzor : public Process {
-public:
-	void Behavior() {
-
+		(new Kamion)->Activate();
+		Activate(Time + 8 HOD);
 	}
 };
 
 int main() {
+	RandomSeed(time(NULL));
 	SetOutput("x1.out");
 	Print("Model vyroby repkoveho oleje\n");
 
@@ -125,8 +139,10 @@ int main() {
 	
 	Run();	// simulace
 
+	stStolniOlej.Output();
+
 	// tisk vysledku
-	Print("Vydestilovano alkoholu celkem: ");
+	/*Print("Vydestilovano alkoholu celkem: ");
 	Print(st_destilat.Sum());
 	Print("\n");
 	Print("Vydestilovano alkoholu prumerne: ");
@@ -134,5 +150,5 @@ int main() {
 	Print("\n");
 	Print("Vyprodukovano vypalku celkem: ");
 	Print(st_vypalky.Sum());
-	Print("\n");
+	Print("\n");*/
 }

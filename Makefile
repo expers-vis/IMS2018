@@ -16,13 +16,9 @@ all: ims
 
 ims:
 	$(CC) $(CPPFLAGS) -o ims ims.cpp $(LDFLAGS)
-	$(CC) $(CPPFLAGS) -o exp1 experiment1.cpp $(LDFLAGS)
-	$(CC) $(CPPFLAGS) -o exp2 experiment2.cpp $(LDFLAGS)
 
 run:
 	./ims
-	./exp1
-	./exp2
 
 pack:
 	zip 03_xjanik20_xkleck04.zip *.cpp Makefile *.pdf
