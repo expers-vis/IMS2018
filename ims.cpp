@@ -9,22 +9,22 @@
 #include "simlib.h"
 #include <time.h>
 
+#include <unistd.h>
+
 #define MIN *1
 #define HOD *60
+
 #define POCET_FILTRU 1
 
 #define KAPACITA_LISU 1000 //kg
 #define SANCE_NA_KVALITNI_REPKU 0.995
-
-#define MIN_PROCENT_ODPADU 1
-#define MAX_PROCENT_ODPADU 2
+#define SANCE_NA_SPATNY_STOLNI_OLEJ 0.00001
+#define SANCE_NA_SPATNY_PANENSKY_OLEJ 0.00001
 
 
 
 //deklarace zarizeni
-Facility kontrolorKvality("kontrolorKvality");
-Facility lis1Stupne("lis1Stupne");
-Facility lis2Stupne("lis2Stupne");
+Store KontrolorKvality("KontrolorKvality", 1);
 
 Store Filtr("Filtr", POCET_FILTRU);
 
@@ -32,11 +32,15 @@ Store Lis1("Lis prvniho stupne", 1);
 Store Lis2("Lis druheho stupne", 1);
 
 Store RafinacniJednotka("Rafinacni jednotka", 1);
+Store KontrolorKvalityOleje("Kontrolor kvality oleje", 1);
 
 //deklarace statistik
 Stat stPanenskyOlej;
 Stat stStolniOlej;
 Stat stVylisky;
+
+Histogram Lis1Cekani("Cekaci doba na lisu prvniho stupne", 0, 25, 20);
+Histogram Lis2Cekani("Cekaci doba na lisu druheho stupne", 0, 25, 20);
 
 //deklarace globalnich zdroju
 double panenskyOlej = 0;
@@ -55,12 +59,17 @@ class PanenskyOlej : public Process {
 		Wait( Uniform(10 MIN, 12 MIN));
 		Leave(Filtr, 1);
 
-		Seize(kontrolorKvality);
-		Wait(Uniform(10 MIN, 20 MIN));
-		Release(kontrolorKvality);
+		Enter(KontrolorKvalityOleje, 1);
+		Wait(Uniform(10 MIN, 15 MIN));
+		Leave(KontrolorKvalityOleje, 1);
+
+		if ( Random() <= SANCE_NA_SPATNY_PANENSKY_OLEJ) {
+			Print("Day: %03d, %02d:%02d : Spatny panensky olej\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60);
+			Terminate();
+		}
 
 		stPanenskyOlej(100);
-        Print("Day: %03d, %02d:%02d : Panensky olej\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60);
+		Print("Day: %03d, %02d:%02d : Panensky olej\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60);
 	}
 };
 
@@ -76,12 +85,18 @@ class StolniOlej : public Process { // 100 l oleje
 		Wait( Uniform(10 MIN, 12 MIN));
 		Leave(RafinacniJednotka, 1);
 
-		Seize(kontrolorKvality);
-		Wait(Uniform(10 MIN, 20 MIN));
-		Release(kontrolorKvality);
+		Enter(KontrolorKvalityOleje, 1);
+		Wait(Uniform(10 MIN, 15 MIN));
+		Leave(KontrolorKvalityOleje, 1);
+
+
+		if ( Random() <= SANCE_NA_SPATNY_STOLNI_OLEJ) {
+			Print("Day: %03d, %02d:%02d : Spatny stolni olej\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60);
+			Terminate();
+		}
 
 		stStolniOlej(100);
-        Print("Day: %03d, %02d:%02d : Stolni olej\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60);
+		Print("Day: %03d, %02d:%02d : Stolni olej\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60);
 	}
 };
 
@@ -94,19 +109,25 @@ class Vylisky : public Process {
 
 
 class Repka : public Process {
+	double Prichod;
+
 	void Behavior() {
 
-	Enter(Lis1, 1);
-	Wait( Normal(29 MIN, 1 MIN));
-	(new PanenskyOlej)->Activate();
-	Leave(Lis1, 1);
+		Prichod = Time;
+		Enter(Lis1, 1);
+		Lis1Cekani(Time - Prichod);
+		Wait( Normal(25 MIN, 1 MIN));
+		(new PanenskyOlej)->Activate();
+		Leave(Lis1, 1);
 
-	Enter(Lis2, 1);
-	Wait( Normal(38 MIN, 1 MIN));
-	(new StolniOlej)->Activate();
-	(new StolniOlej)->Activate();
-	(new Vylisky)->Activate();
-	Leave(Lis2, 1);
+		Prichod = Time;
+		Enter(Lis2, 1);
+		Lis2Cekani(Time - Prichod);
+		Wait( Normal(35 MIN, 1 MIN));
+		(new StolniOlej)->Activate();
+		(new StolniOlej)->Activate();
+		(new Vylisky)->Activate();
+		Leave(Lis2, 1);
 
 	}
 };
@@ -114,9 +135,9 @@ class Repka : public Process {
 class Kamion : public Process {
 public:
 	void Behavior() {
-		Seize(kontrolorKvality); // kontrola kvality
+		Enter(KontrolorKvality, 1); // kontrola kvality
 		Wait(Uniform(25 MIN, 35 MIN));
-		Release(kontrolorKvality);
+		Leave(KontrolorKvality, 1);
 
 		if (Random() <= SANCE_NA_KVALITNI_REPKU) // repka je v poradku //99.5
 		{
@@ -138,25 +159,45 @@ class Generator : public Event {
 
 class EveryHour : public Event 
 {
-    void Behavior() 
-    {
-        Print("Day: %03d, %02d:%02d : Stolni olej\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60);
-        Print("Day: %03d, %02d:%02d : Lis1 fronta: %d\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60 ,Lis1.QueueLen());
-        Print("Day: %03d, %02d:%02d : Lis2 fronta: %d\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60 ,Lis2.QueueLen());
-        Print("Day: %03d, %02d:%02d : Filtr fronta: %d\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60 ,Filtr.QueueLen());
-        Print("Day: %03d, %02d:%02d : RafinacniJednotka fronta: %d\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60 ,RafinacniJednotka.QueueLen());
-        Activate(Time+60); // aktivace za 1h
-    }
+	void Behavior() 
+	{
+		Print("Day: %03d, %02d:%02d : KontrolorKvality fronta: %d\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60 ,KontrolorKvality.QueueLen());
+		Print("Day: %03d, %02d:%02d : Lis1 fronta: %d\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60 ,Lis1.QueueLen());
+		Print("Day: %03d, %02d:%02d : Lis2 fronta: %d\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60 ,Lis2.QueueLen());
+		Print("Day: %03d, %02d:%02d : Filtr fronta: %d\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60 ,Filtr.QueueLen());
+		Print("Day: %03d, %02d:%02d : RafinacniJednotka fronta: %d\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60 ,RafinacniJednotka.QueueLen());
+		Print("Day: %03d, %02d:%02d : KontrolorKvalityOleje fronta: %d\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60 ,KontrolorKvalityOleje.QueueLen());
+		Activate(Time + 1 HOD); // aktivace za 1h
+	}
 };
 
-int main() {
+int main(int argc, char *argv[]) {
+	int c;
+	while ((c = getopt (argc, argv, "F:1:2:v:")) != -1) 
+	{
+		switch (c)
+		{
+			case 'F':
+				Filtr.SetCapacity(atoi(optarg));
+				break;
+			case '1':
+				Lis1.SetCapacity(atoi(optarg));
+				break;
+			case '2':
+				Lis2.SetCapacity(atoi(optarg));
+				break;
+			default:
+				break;
+		}
+	}
+
 	RandomSeed(time(NULL));
 	SetOutput("x1.out");
 	Print("Model vyroby repkoveho oleje\n");
 
 	Init(0, 80 HOD);	// inicializace experimentu
 	(new Generator)->Activate();	// aktivace generatoru pozadavku
-    (new EveryHour)->Activate();
+	(new EveryHour)->Activate();
 	
 	Run();	// simulace
 
@@ -166,6 +207,13 @@ int main() {
 	stPanenskyOlej.Output();
 	Print("Vylisky: \n");
 	stVylisky.Output();
+
+	Print("Lis druheho stupne - fronta: \n");
+	Lis1Cekani.Output();
+	Print("Lis druheho stupne - fronta: \n");
+	Lis2Cekani.Output();
+
+	Lis1.Output();
 
 	// tisk vysledku
 	/*Print("Vydestilovano alkoholu celkem: ");
