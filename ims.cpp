@@ -1,7 +1,7 @@
 /**
 * @file 	ims.cpp
 * @author	Roman Janik (xjanik20)
-* @author	Karel Klecka(xkleck04)
+* @author	Karel Klecka (xkleck04)
 * @date 	31.10.2018
 * @brief	IMS projekt - Vyroba repkoveho oleje
 */
@@ -24,15 +24,15 @@
 
 
 //deklarace zarizeni
-Store KontrolorKvality("KontrolorKvality", 1);
-
-Store Filtr("Filtr", POCET_FILTRU);
+Store VstupniKontrolorKvality("KontrolorKvality", 1);
 
 Store Lis1("Lis prvniho stupne", 1);
 Store Lis2("Lis druheho stupne", 1);
 
+Store Filtr("Filtr", POCET_FILTRU);
+
 Store RafinacniJednotka("Rafinacni jednotka", 1);
-Store KontrolorKvalityOleje("Kontrolor kvality oleje", 1);
+Store VystupniKontrolorKvality("Kontrolor kvality oleje", 1);
 
 //deklarace statistik
 Stat stPanenskyOlej;
@@ -73,7 +73,7 @@ class PanenskyOlej : public Process {
 	}
 };
 
-class StolniOlej : public Process { // 100 l oleje
+class StolniOlej : public Process { // 100 kg oleje
 	public: StolniOlej() : Process(0) { }
 
 	void Behavior() {
