@@ -21,7 +21,7 @@ run:
 	./ims
 
 pack:
-	zip 03_xjanik20_xkleck04.zip *.cpp Makefile *.pdf
+	zip 03_xjanik20_xkleck04.zip *.cpp Makefile *.pdf README.md
 
 clean:
 	rm -f ims ./*.out
