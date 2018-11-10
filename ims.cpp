@@ -14,7 +14,7 @@
 #define MIN *1
 #define HOD *60
 
-#define POCET_FILTRU 1
+#define POCET_FILTRU 3
 
 #define KAPACITA_LISU 1000 //kg
 #define SANCE_NA_KVALITNI_REPKU 0.995
@@ -59,9 +59,9 @@ class PanenskyOlej : public Process {
 		Wait( Uniform(10 MIN, 12 MIN));
 		Leave(Filtr, 1);
 
-		Enter(KontrolorKvalityOleje, 1);
+		Enter(VystupniKontrolorKvality, 1);
 		Wait(Uniform(10 MIN, 15 MIN));
-		Leave(KontrolorKvalityOleje, 1);
+		Leave(VystupniKontrolorKvality, 1);
 
 		if ( Random() <= SANCE_NA_SPATNY_PANENSKY_OLEJ) {
 			Print("Day: %03d, %02d:%02d : Spatny panensky olej\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60);
@@ -85,9 +85,9 @@ class StolniOlej : public Process { // 100 kg oleje
 		Wait( Uniform(10 MIN, 12 MIN));
 		Leave(RafinacniJednotka, 1);
 
-		Enter(KontrolorKvalityOleje, 1);
+		Enter(VystupniKontrolorKvality, 1);
 		Wait(Uniform(10 MIN, 15 MIN));
-		Leave(KontrolorKvalityOleje, 1);
+		Leave(VystupniKontrolorKvality, 1);
 
 
 		if ( Random() <= SANCE_NA_SPATNY_STOLNI_OLEJ) {
@@ -135,9 +135,9 @@ class Repka : public Process {
 class Kamion : public Process {
 public:
 	void Behavior() {
-		Enter(KontrolorKvality, 1); // kontrola kvality
+		Enter(VstupniKontrolorKvality, 1); // kontrola kvality
 		Wait(Uniform(25 MIN, 35 MIN));
-		Leave(KontrolorKvality, 1);
+		Leave(VstupniKontrolorKvality, 1);
 
 		if (Random() <= SANCE_NA_KVALITNI_REPKU) // repka je v poradku //99.5
 		{
@@ -152,7 +152,7 @@ public:
 class Generator : public Event {
 	void Behavior() {
 		(new Kamion)->Activate();
-		Activate(Time + 8 HOD);
+		Activate(Time + 16 HOD);
 	}
 };
 
@@ -161,12 +161,12 @@ class EveryHour : public Event
 {
 	void Behavior() 
 	{
-		Print("Day: %03d, %02d:%02d : KontrolorKvality fronta: %d\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60 ,KontrolorKvality.QueueLen());
+		Print("Day: %03d, %02d:%02d : VstupniKontrolorKvality fronta: %d\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60 ,VstupniKontrolorKvality.QueueLen());
 		Print("Day: %03d, %02d:%02d : Lis1 fronta: %d\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60 ,Lis1.QueueLen());
 		Print("Day: %03d, %02d:%02d : Lis2 fronta: %d\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60 ,Lis2.QueueLen());
 		Print("Day: %03d, %02d:%02d : Filtr fronta: %d\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60 ,Filtr.QueueLen());
 		Print("Day: %03d, %02d:%02d : RafinacniJednotka fronta: %d\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60 ,RafinacniJednotka.QueueLen());
-		Print("Day: %03d, %02d:%02d : KontrolorKvalityOleje fronta: %d\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60 ,KontrolorKvalityOleje.QueueLen());
+		Print("Day: %03d, %02d:%02d : VystupniKontrolorKvality fronta: %d\n" ,((int)Time/1440), ((int)Time/60)%24, ((int)Time)%60 ,VystupniKontrolorKvality.QueueLen());
 		Activate(Time + 1 HOD); // aktivace za 1h
 	}
 };
