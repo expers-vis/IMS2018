@@ -14,11 +14,13 @@
 #define MIN *1
 #define HOD *60
 #define DEN *60*24
+#define TYDEN *7*60*24
 #define HUSTOTA_REPKOVEHO_OLEJE 0.915
 
 #define KAPACITA_RJ 4 //rafinacni jednotky, ks
 #define SANCE_NA_KVALITNI_REPKU 0.995
 #define SANCE_NA_SPATNY_PANENSKY_OLEJ 0.00001
+#define SANCE_NA_SPATNY_STOLNI_OLEJ 0.00001
 
 
 //deklarace zarizeni
@@ -33,7 +35,7 @@ Store RafinacniJednotka("Rafinacni jednotka", 1);
 Store VystupniKontrolaKvality("Kontrola kvality oleje", 1);
 
 //deklarace statistik
-Histogram Lis1Cekani("Cekaci doba na lisu prvniho stupne", 0, 25, 20);
+Histogram Lis1Cekani("Cekaci doba na lisu prvniho stupne", 0, 50, 20);
 Histogram Lis2Cekani("Cekaci doba na lisu druheho stupne", 0, 25, 20);
 
 //deklarace globalnich zdroju
@@ -46,7 +48,7 @@ int frontaRafinacni = 0;
 
 bool hodinovyVypis = false;
 int intervalPrijezdu = 16 HOD;
-double sanceSpatnyStolni = 0.00001;
+double sanceSpatnyStolni = SANCE_NA_SPATNY_STOLNI_OLEJ;
 int minCasRJ = 55 MIN;
 int maxCasRJ = 65 MIN;
 
@@ -192,9 +194,10 @@ class EveryHour : public Event
 
 int main(int argc, char *argv[]) {
 	int c;
+	int dobaBehu = 1 TYDEN;
 	std::string vystupniSoubor = "basic.out";
 
-	while ((c = getopt (argc, argv, "F:1:2:o:hf:O:s:n:x:")) != -1) 
+	while ((c = getopt (argc, argv, "F:1:2:o:hf:O:s:n:x:t:")) != -1) 
 	{
 		switch (c)
 		{
@@ -228,6 +231,9 @@ int main(int argc, char *argv[]) {
 			case 'x':
 				maxCasRJ = atof(optarg);
 				break;
+			case 't':
+				dobaBehu = atof(optarg) DEN;
+				break;
 			default:
 				break;
 		}
@@ -237,7 +243,7 @@ int main(int argc, char *argv[]) {
 	SetOutput(vystupniSoubor.c_str());
 	Print("Model vyroby repkoveho oleje\n");
 
-	Init(0, 7 DEN);	// inicializace experimentu
+	Init(0, dobaBehu);	// inicializace experimentu
 	(new Generator)->Activate();	// aktivace generatoru pozadavku
 	if ( hodinovyVypis ) {
 		(new EveryHour)->Activate();
@@ -249,12 +255,11 @@ int main(int argc, char *argv[]) {
 	Print("Celkem vyrobeno:\n");
 	Print("Stolni olej: %g l   (%d kg)\n", stolniOlej / HUSTOTA_REPKOVEHO_OLEJE, stolniOlej);
 	Print("Spatny stolni olej: %g l   (%d kg)\n", spatnyStolni / HUSTOTA_REPKOVEHO_OLEJE, spatnyStolni);
-	double result = 100 * spatnyStolni / (spatnyStolni + stolniOlej);
-	Print("Celkem stolniho oleje: %g l   (%d kg), spatny olej tvori %g %% celkoveho\n",
-																					(stolniOlej + spatnyStolni) / HUSTOTA_REPKOVEHO_OLEJE,
-																					stolniOlej + spatnyStolni,
-																					result
-																					);
+	double result = 100 * (double) spatnyStolni / (spatnyStolni + stolniOlej);
+	Print("Celkem stolniho oleje: %g l   (%d kg), spatny olej tvori %g %% celkoveho\n",	(stolniOlej + spatnyStolni) / HUSTOTA_REPKOVEHO_OLEJE,
+																							stolniOlej + spatnyStolni,
+																							result
+																							);
 	Print("Panensky olej: %g l   (%d kg)\n", extraPanenskyOlej / HUSTOTA_REPKOVEHO_OLEJE, extraPanenskyOlej);
 	Print("Vylisky: %d kg \n\n", vylisky);
 
