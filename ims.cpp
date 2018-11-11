@@ -20,7 +20,6 @@
 #define SANCE_NA_KVALITNI_REPKU 0.995
 #define SANCE_NA_SPATNY_STOLNI_OLEJ 0.00001
 #define SANCE_NA_SPATNY_PANENSKY_OLEJ 0.00001
-#define PRIJEZD_KAMIONU_INTERVAL 16*60
 
 
 //deklarace zarizeni
@@ -44,6 +43,8 @@ int stolniOlej = 0;
 int vylisky = 0;
 
 int frontaRafinacni = 0;
+
+int intervalPrijezdu = 16 HOD;
 
 bool hodinovyVypis = false;
 
@@ -138,7 +139,7 @@ class Repka : public Process {
 		Prichod = Time;
 		Enter(Lis2, 1);
 		Lis2Cekani(Time - Prichod);
-		Wait(Uniform(39 MIN, 41 MIN));
+		Wait(Uniform(38 MIN, 40 MIN));
 		(new PanenskyOlej)->Activate();
 		(new PanenskyOlej)->Activate();
 		(new Vylisky)->Activate();
@@ -167,7 +168,7 @@ public:
 class Generator : public Event {
 	void Behavior() {
 		(new Kamion)->Activate();
-		Activate(Time + PRIJEZD_KAMIONU_INTERVAL);
+		Activate(Time + intervalPrijezdu);
 	}
 };
 
@@ -190,7 +191,7 @@ int main(int argc, char *argv[]) {
 	int c;
 	std::string vystupniSoubor = "basic.out";
 
-	while ((c = getopt (argc, argv, "F:1:2:h:o")) != -1) 
+	while ((c = getopt (argc, argv, "F:1:2:o:hf:")) != -1) 
 	{
 		switch (c)
 		{
@@ -208,6 +209,9 @@ int main(int argc, char *argv[]) {
 				break;
 			case 'o':
 				vystupniSoubor = optarg;
+				break;
+			case 'f':
+				intervalPrijezdu = atoi(optarg);
 				break;
 			default:
 				break;
@@ -237,5 +241,10 @@ int main(int argc, char *argv[]) {
 	Print("Lis druheho stupne - fronta: \n");
 	Lis2Cekani.Output();
 
+	VstupniKontrolaKvality.Output();
 	Lis1.Output();
+	Lis2.Output();
+	Filtr.Output();
+	RafinacniJednotka.Output();
+	VystupniKontrolaKvality.Output();
 }
