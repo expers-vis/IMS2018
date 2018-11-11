@@ -19,6 +19,8 @@ ims:
 
 run:
 	./ims
+	./ims -o tricetNavic.out -f 738
+	./ims -o tricetNavicBalanced.out -f 738 -1 2 -2 2 -O 2 -h
 
 pack:
 	zip 03_xjanik20_xkleck04.zip *.cpp Makefile *.pdf README.md
