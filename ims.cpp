@@ -112,7 +112,7 @@ class PanenskyOlej : public Process {
 		frontaRafinacni -= KAPACITA_RJ;
 
 		Enter(RafinacniJednotka, 1);
-		Wait(Uniform(55 MIN, 65 MIN)); //normal 60 5
+		Wait(Uniform( minCasRJ, maxCasRJ)); //normal 60 5
 		for(int i = 0; i < KAPACITA_RJ; i++) {
 			(new StolniOlej)->Activate();
 		}
@@ -144,7 +144,7 @@ class Repka : public Process {
 		Prichod = Time;
 		Enter(Lis2, 1);
 		Lis2Cekani(Time - Prichod);
-		Wait(Uniform(38 MIN, 40 MIN));
+		Wait(Uniform(37 MIN, 40 MIN));
 		(new PanenskyOlej)->Activate();
 		(new PanenskyOlej)->Activate();
 		(new Vylisky)->Activate();
@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
 	int dobaBehu = 1 TYDEN;
 	std::string vystupniSoubor = "basic.out";
 
-	while ((c = getopt (argc, argv, "F:1:2:o:hf:O:s:n:x:t:")) != -1) 
+	while ((c = getopt (argc, argv, "F:1:2:o:hf:O:s:n:x:t:R:")) != -1) 
 	{
 		switch (c)
 		{
@@ -209,6 +209,9 @@ int main(int argc, char *argv[]) {
 				break;
 			case '2':
 				Lis2.SetCapacity(atoi(optarg));
+				break;
+			case 'R':
+				RafinacniJednotka.SetCapacity(atoi(optarg));
 				break;
 			case 'O':
 				VystupniKontrolaKvality.SetCapacity(atoi(optarg));
@@ -226,10 +229,10 @@ int main(int argc, char *argv[]) {
 				sanceSpatnyStolni = atof(optarg);
 				break;
 			case 'n':
-				minCasRJ = atof(optarg);
+				minCasRJ = atof(optarg) MIN;
 				break;
 			case 'x':
-				maxCasRJ = atof(optarg);
+				maxCasRJ = atof(optarg) MIN;
 				break;
 			case 't':
 				dobaBehu = atof(optarg) DEN;
@@ -260,12 +263,10 @@ int main(int argc, char *argv[]) {
 																							stolniOlej + spatnyStolni,
 																							result
 																							);
-	Print("Panensky olej: %g l   (%d kg)\n", extraPanenskyOlej / HUSTOTA_REPKOVEHO_OLEJE, extraPanenskyOlej);
+	Print("Extra panensky olej: %g l   (%d kg)\n", extraPanenskyOlej / HUSTOTA_REPKOVEHO_OLEJE, extraPanenskyOlej);
 	Print("Vylisky: %d kg \n\n", vylisky);
 
-	Print("Lis druheho stupne - fronta: \n");
 	Lis1Cekani.Output();
-	Print("Lis druheho stupne - fronta: \n");
 	Lis2Cekani.Output();
 
 	VstupniKontrolaKvality.Output();

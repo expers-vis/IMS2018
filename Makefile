@@ -18,10 +18,11 @@ ims:
 	$(CC) $(CPPFLAGS) -o ims ims.cpp $(LDFLAGS)
 
 run:
-	./ims
-	./ims -o tricetNavic.out -f 738
-	./ims -o tricetNavicBalanced.out -f 738 -1 2 -2 2 -O 2 
-	./ims -o odbytaRafinace.out -f 738 -1 2 -2 2 -O 2 -n 48 -x 58 -s 0.001 -t 56
+	./ims -o zakladni.out
+	./ims -o zakladniBalanced.out -F 1
+	./ims -o tricetNavic.out -f 738 -F 1
+	./ims -o tricetNavicBalanced.out -f 738 -1 2 -2 2 -O 2 -R 2 -F 2
+	./ims -o odbytaRafinace.out -f 738 -1 2 -2 2 -O 2 -F 2 -n 46 -x 51 -s 0.001 -t 56
 pack:
 	zip 03_xjanik20_xkleck04.zip *.cpp Makefile *.pdf README.md
 
